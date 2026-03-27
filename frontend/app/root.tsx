@@ -54,7 +54,8 @@ export default function App() {
     <div className="min-h-screen flex flex-col">
       <header className="w-full self-center px-6 py-3">
         <div className="flex flex-row justify-between items-center">
-          <img className="w-24 h-36 self-start" src="static/images/sonic.webp" alt="Sonic" />
+          <FontAwesomeIcon className="size-18 md:hidden" icon="fa-solid fa-bars" />
+          <img className="hidden md:block w-24 h-36 self-start" src="static/images/sonic.webp" alt="Sonic" />
           <nav className="flex items-center justify-center self-center flex-row gap-6">
             <Link className="text-xl md:text-4xl" to="/">Tournament</Link>
             <Link className="text-xl md:text-4xl" to="/display">Display</Link>
@@ -67,7 +68,7 @@ export default function App() {
 
       <main className="flex-1 flex flex-row p-6">
         <aside className="md:hidden">
-          <FontAwesomeIcon icon="fa-solid fa-bars" />
+          {/*Mobile Sidebar TODO*/}
         </aside>
         <aside className="hidden md:block w-100 border-r p-6 bg-slate-50 min-h-full">
           <h2 className="text-2xl font-bold mb-4">Sidebar</h2>

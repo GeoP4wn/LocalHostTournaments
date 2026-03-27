@@ -13,5 +13,13 @@ export default defineConfig({
         rewrite: (path) => path.replace(/^\/api/, '')
       }
     }
+  },
+  optimizeDeps: {
+	  exclude: ['@tailwindcss/oxide-linux-x64-gnu', '@tailwindcss/oxide']
+  },
+  build: {
+	  rollupOptions: {
+		  external: ['@tailwindcss/oxide-linux-x64-gnu']
+	  }
   }
 });
