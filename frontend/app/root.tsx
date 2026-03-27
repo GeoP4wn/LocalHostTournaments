@@ -11,6 +11,12 @@ import {
 import type { Route } from "./+types/root";
 import "./app.css";
 import tailwindscss from '@tailwindcss/vite'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { library } from '@fortawesome/fontawesome-svg-core'
+import { fas } from '@fortawesome/free-solid-svg-icons'
+import { far } from '@fortawesome/free-regular-svg-icons'
+import { fab } from '@fortawesome/free-brands-svg-icons'
+library.add(fas, far, fab)
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -61,7 +67,7 @@ export default function App() {
 
       <main className="flex-1 flex flex-row p-6">
         <aside className="md:hidden">
-          <img src="static/images/menu.jpg"></img>
+          <FontAwesomeIcon icon="fa-solid fa-bars" />
         </aside>
         <aside className="hidden md:block w-100 border-r p-6 bg-slate-50 min-h-full">
           <h2 className="text-2xl font-bold mb-4">Sidebar</h2>
