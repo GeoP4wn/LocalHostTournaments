@@ -14,28 +14,13 @@ type Pages = {
   "/": {
     params: {};
   };
-  "/join": {
+  "/display": {
     params: {};
   };
-  "/host": {
+  "/draft": {
     params: {};
   };
-  "/draft/:playerId": {
-    params: {
-      "playerId": string;
-    };
-  };
-  "/display/:code": {
-    params: {
-      "code": string;
-    };
-  };
-  "/scores/:code": {
-    params: {
-      "code": string;
-    };
-  };
-  "/games": {
+  "/scores": {
     params: {};
   };
 };
@@ -43,45 +28,30 @@ type Pages = {
 type RouteFiles = {
   "root.tsx": {
     id: "root";
-    page: "/" | "/join" | "/host" | "/draft/:playerId" | "/display/:code" | "/scores/:code" | "/games";
+    page: "/" | "/display" | "/draft" | "/scores";
   };
   "routes/home.tsx": {
     id: "routes/home";
     page: "/";
   };
-  "routes/join.tsx": {
-    id: "routes/join";
-    page: "/join";
-  };
-  "routes/host.tsx": {
-    id: "routes/host";
-    page: "/host";
+  "routes/display.tsx": {
+    id: "routes/display";
+    page: "/display";
   };
   "routes/draft.tsx": {
     id: "routes/draft";
-    page: "/draft/:playerId";
-  };
-  "routes/display.tsx": {
-    id: "routes/display";
-    page: "/display/:code";
+    page: "/draft";
   };
   "routes/scores.tsx": {
     id: "routes/scores";
-    page: "/scores/:code";
-  };
-  "routes/games.tsx": {
-    id: "routes/games";
-    page: "/games";
+    page: "/scores";
   };
 };
 
 type RouteModules = {
   "root": typeof import("./app/root.tsx");
   "routes/home": typeof import("./app/routes/home.tsx");
-  "routes/join": typeof import("./app/routes/join.tsx");
-  "routes/host": typeof import("./app/routes/host.tsx");
-  "routes/draft": typeof import("./app/routes/draft.tsx");
   "routes/display": typeof import("./app/routes/display.tsx");
+  "routes/draft": typeof import("./app/routes/draft.tsx");
   "routes/scores": typeof import("./app/routes/scores.tsx");
-  "routes/games": typeof import("./app/routes/games.tsx");
 };

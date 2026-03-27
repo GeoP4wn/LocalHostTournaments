@@ -5,10 +5,12 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
+  Link
 } from "react-router";
 
 import type { Route } from "./+types/root";
 import "./app.css";
+import tailwindscss from '@tailwindcss/vite'
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -42,7 +44,39 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
-  return <Outlet />;
+  return (
+    <div className="min-h-screen flex flex-col">
+      <header className="w-full self-center px-6 py-3">
+        <div className="flex flex-row justify-between items-center">
+          <img className="w-24 h-36 self-start" src="static/images/sonic.webp" alt="Sonic" />
+          <nav className="flex items-center justify-center self-center flex-row gap-6">
+            <Link className="text-xl md:text-4xl" to="/">Tournament</Link>
+            <Link className="text-xl md:text-4xl" to="/display">Display</Link>
+            <Link className="text-xl md:text-4xl" to="/draft">Draft</Link>
+            <Link className="text-xl md:text-4xl" to="/scores">Scores</Link>
+          </nav>
+          <div className="w-24 hidden md:block" /> {/* Placeholder for spacing */}
+        </div>
+      </header>
+
+      <main className="flex-1 flex flex-row p-6">
+        <aside className="md:hidden">
+          <img src="static/images/menu.jpg"></img>
+        </aside>
+        <aside className="hidden md:block w-100 border-r p-6 bg-slate-50 min-h-full">
+          <h2 className="text-2xl font-bold mb-4">Sidebar</h2>
+          <ul className="space-y-2">
+            <li>
+              <Link className="text-lg hover:underline" to="/">Home</Link>
+            </li>
+          </ul>
+        </aside>
+        <section className="flex-1 p-6">
+          <Outlet />  {/* page content */}
+        </section>
+      </main>
+    </div>
+  )
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
