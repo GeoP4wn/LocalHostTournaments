@@ -19,7 +19,6 @@ import { useTournament } from "./hooks/useTournament";
 
 import type { Route } from "./+types/root";
 import "./app.css";
-import tailwindscss from '@tailwindcss/vite'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { library } from '@fortawesome/fontawesome-svg-core'
 import { fas } from '@fortawesome/free-solid-svg-icons'
@@ -80,7 +79,9 @@ export default function App() {
     <div className="min-h-screen flex flex-col">
       <header className="w-full self-center px-6 py-3">
         <div className="flex flex-row justify-between items-center">
-          <FontAwesomeIcon className="size-18 md:hidden" icon="fa-solid fa-bars" />
+          <div className="size-18 md:hidden">
+            <FontAwesomeIcon icon="fa-solid fa-bars" />
+          </div>
           <img className="hidden md:block w-24 h-36 self-start" src="static/images/sonic.webp" alt="Sonic" />
           <nav className="flex items-center justify-center self-center flex-row gap-6">
             <Link className="text-xl md:text-4xl" to="/">Tournament</Link>
@@ -108,7 +109,7 @@ export default function App() {
           {/*Mobile Sidebar TODO*/}
         </aside>
         <aside className="hidden md:block w-100 border-r p-6 bg-slate-50 min-h-full">
-          <h2 className="text-2xl font-bold mb-4">Sidebar</h2>
+          <h2 className="text-2xl font-bold mb-4">LocalHost</h2>
           <ul className="space-y-2">
             {links.map((link) => (
               <li key={link.to}>
