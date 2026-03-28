@@ -5,7 +5,8 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
-  Link
+  Link,
+  useMatches
 } from "react-router";
 
 import type { Route } from "./+types/root";
@@ -50,6 +51,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
+  const matches = useMatches();
+
+  //handle for the side bar links
+  const currentHandle = matches.find((m) => m.handle?.sidebarLinks);
+  const links = currentHandle?.handle?.sidebarLinks || [];
+
   return (
     <div className="min-h-screen flex flex-col">
       <header className="w-full self-center px-6 py-3">
@@ -73,9 +80,16 @@ export default function App() {
         <aside className="hidden md:block w-100 border-r p-6 bg-slate-50 min-h-full">
           <h2 className="text-2xl font-bold mb-4">Sidebar</h2>
           <ul className="space-y-2">
-            <li>
-              <Link className="text-lg hover:underline" to="/">Home</Link>
-            </li>
+            {links.map((link) => (
+              <li key={link.to}>
+                <Link 
+                  className="text-lg hover:underline" 
+                  to={link.to}
+                >
+                  {link.label}
+                </Link>
+              </li>
+            ))}
           </ul>
         </aside>
         <section className="flex-1 p-6">
