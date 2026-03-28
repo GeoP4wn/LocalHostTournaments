@@ -1,16 +1,16 @@
 export const handle = {
   sidebarLinks: [
     { label: "< Back", to: "/" },
+    { label: "Join a Tournament", to: "/join" },
     { label: "Start a new Tournament", to: "/start" },
     { label: "Tournament History", to: "/history" },
-    { label: "Manage a Tournament", to: "/manage" },
   ],
 };
 
-export default function Scores()  {
+export default function HomeManage()  {
     return(
         <div>
-            <h1>Input the scores during a Tournament</h1>
+            <h1>Manage a Tournament</h1>
         </div>
     );
 }

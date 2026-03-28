@@ -14,6 +14,18 @@ type Pages = {
   "/": {
     params: {};
   };
+  "/join": {
+    params: {};
+  };
+  "/manage": {
+    params: {};
+  };
+  "/history": {
+    params: {};
+  };
+  "/start": {
+    params: {};
+  };
   "/display": {
     params: {};
   };
@@ -28,11 +40,27 @@ type Pages = {
 type RouteFiles = {
   "root.tsx": {
     id: "root";
-    page: "/" | "/display" | "/draft" | "/scores";
+    page: "/" | "/join" | "/manage" | "/history" | "/start" | "/display" | "/draft" | "/scores";
   };
   "routes/home.tsx": {
     id: "routes/home";
     page: "/";
+  };
+  "routes/join.tsx": {
+    id: "routes/join";
+    page: "/join";
+  };
+  "routes/home.manage.tsx": {
+    id: "routes/home.manage";
+    page: "/manage";
+  };
+  "routes/home.history.tsx": {
+    id: "routes/home.history";
+    page: "/history";
+  };
+  "routes/home.start.tsx": {
+    id: "routes/home.start";
+    page: "/start";
   };
   "routes/display.tsx": {
     id: "routes/display";
@@ -51,6 +79,10 @@ type RouteFiles = {
 type RouteModules = {
   "root": typeof import("./app/root.tsx");
   "routes/home": typeof import("./app/routes/home.tsx");
+  "routes/join": typeof import("./app/routes/join.tsx");
+  "routes/home.manage": typeof import("./app/routes/home.manage.tsx");
+  "routes/home.history": typeof import("./app/routes/home.history.tsx");
+  "routes/home.start": typeof import("./app/routes/home.start.tsx");
   "routes/display": typeof import("./app/routes/display.tsx");
   "routes/draft": typeof import("./app/routes/draft.tsx");
   "routes/scores": typeof import("./app/routes/scores.tsx");

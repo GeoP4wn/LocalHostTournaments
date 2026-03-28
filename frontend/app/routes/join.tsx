@@ -7,10 +7,10 @@ export const handle = {
   ],
 };
 
-export default function Scores()  {
+export default function JoinTournament()  {
     return(
         <div>
-            <h1>Input the scores during a Tournament</h1>
+            <h1>Join a Tournament</h1>
         </div>
     );
 }
