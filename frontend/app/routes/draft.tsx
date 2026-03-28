@@ -1,3 +1,5 @@
+import { useTournament } from "~/hooks/useTournament";
+
 export const handle = {
   sidebarLinks: [
     { label: "< Back", to: "/" },
@@ -8,9 +10,11 @@ export const handle = {
 };
 
 export default function Draft()  {
-    return(
-        <div>
-            <h1>Draft the games for a Tournament</h1>
-        </div>
-    );
+  const { tournament, leave } = useTournament()
+  if (!tournament) return null // redirecting
+  return(
+      <div>
+          <h1>Draft the games for a Tournament</h1>
+      </div>
+  );
 }

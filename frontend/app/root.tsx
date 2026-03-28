@@ -6,8 +6,16 @@ import {
   Scripts,
   ScrollRestoration,
   Link,
-  useMatches
+  useMatches,
+  useNavigate,
 } from "react-router";
+
+import { 
+  useEffect, 
+  useState, 
+} from "react";
+
+import { useTournament } from "./hooks/useTournament";
 
 import type { Route } from "./+types/root";
 import "./app.css";
@@ -56,6 +64,17 @@ export default function App() {
   //handle for the side bar links
   const currentHandle = matches.find((m) => m.handle?.sidebarLinks);
   const links = currentHandle?.handle?.sidebarLinks || [];
+  const [tournament, setTournament] = useState<{code: string, playerName: string} | null>(null)
+
+  useEffect(() => {
+    const stored = localStorage.getItem("tournament")
+    setTournament(stored ? JSON.parse(stored) : null)
+  }, [])
+
+  const leave = () => {
+    localStorage.removeItem("tournament")
+    setTournament(null)
+  }
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -69,7 +88,18 @@ export default function App() {
             <Link className="text-xl md:text-4xl" to="/draft">Draft</Link>
             <Link className="text-xl md:text-4xl" to="/scores">Scores</Link>
           </nav>
-          <div className="w-24 hidden md:block" /> {/* Placeholder for spacing */}
+          <div>
+            {tournament && (
+              <div className="flex items-center gap-2 ml-auto">
+                <span className="text-sm font-mono bg-gray-100 px-2 py-1 rounded">
+                  {tournament.code}
+                </span>
+                <button onClick={leave} className="text-gray-400 hover:text-red-500">
+                  ✕
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </header>
 
