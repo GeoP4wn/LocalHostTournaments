@@ -8,12 +8,21 @@ from datetime import datetime
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
+from fastapi.middleware.cors import CORSMiddleware
 
 limiter = Limiter(key_func=get_remote_address)
 app = FastAPI()
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.mount("/static", StaticFiles(directory="../frontend/static"), name="static")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"], # Your React dev server URL
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 DB = "tournament.db"
 

@@ -1,6 +1,7 @@
 import {
-  Outlet
+  Outlet,
 } from "react-router";
+
 
 export const handle = {
   sidebarLinks: [
