@@ -5,6 +5,7 @@ import {
 import {
   useNavigate
 } from "react-router";
+import { QRCodeSVG } from "qrcode.react";
 
 export const handle = {
   sidebarLinks: [
@@ -18,6 +19,7 @@ export default function Display() {
   const [draftStatus, setDraftStatus] = useState(null); // Stores the current draft status from the server
   const [joinCode, setJoinCode] = useState("");
   const navigate = useNavigate();
+  const [joinUrl, setJoinUrl] = useState("");
 
   const handleDisplay = async (code) => {
     try {
@@ -62,6 +64,8 @@ export default function Display() {
     const rawData = localStorage.getItem("tournament");
     const data = JSON.parse(rawData || "{}");
 
+    setJoinUrl(window.location.origin + "/join/" + data.code);
+
     if (data.code) {
       // 2. "Upload" the ID into state
       setJoinCode(data.code);
@@ -89,6 +93,39 @@ export default function Display() {
             {p.name}{p.draft_done ? " (Done)" : ""}
           </span>
         ))}
+      </div>
+
+      <button 
+        className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600" 
+        onClick={async () => {
+            try {
+              const response = await fetch("http://localhost:8000/tournaments/"+joinCode+"/start", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+              });
+
+              if (!response.ok) {
+                throw new Error(`Error: ${response.statusText}`);
+              }
+
+              const result = await response.json();
+              navigate("/display/tournament");
+
+            } catch (error) {
+              console.error("Failed to join tournament:", error);
+              alert("Failed: " + error.message);
+            }
+        }}
+      >
+        Join a Tournament
+      </button>
+
+      {/* 4. Display Join URL and QR Code */}
+      <div className="p-4 bg-white rounded shadow-lg flex flex-col items-center">
+        <QRCodeSVG value={joinUrl} size={128} />
+        <p className="mt-2 font-mono font-bold text-lg">{joinCode}</p>
       </div>
 
       <h2>The games chosen:</h2>

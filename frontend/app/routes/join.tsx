@@ -1,8 +1,9 @@
 import {
-  useNavigate
+  useNavigate,
+  useParams,
 } from "react-router";
 import {
-  useState
+  useState,
 } from "react";
 
 export const handle = {
@@ -16,7 +17,8 @@ export const handle = {
 
 export default function JoinTournament()  {
   const navigate = useNavigate();
-  const [joinCode, setJoinCode] = useState("");
+  const { urlCode } = useParams();
+  const [joinCode, setJoinCode] = useState(urlCode || ""); // Start with URL code if present
   const [name, setName] = useState("");
   const handleJoin = async () => {
     try {

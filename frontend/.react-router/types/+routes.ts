@@ -14,8 +14,10 @@ type Pages = {
   "/": {
     params: {};
   };
-  "/join": {
-    params: {};
+  "/join/:urlCode?": {
+    params: {
+      "urlCode"?: string;
+    };
   };
   "/manage": {
     params: {};
@@ -46,7 +48,7 @@ type Pages = {
 type RouteFiles = {
   "root.tsx": {
     id: "root";
-    page: "/" | "/join" | "/manage" | "/history" | "/start" | "/display" | "/display/draft" | "/display/tournament" | "/draft" | "/scores";
+    page: "/" | "/join/:urlCode?" | "/manage" | "/history" | "/start" | "/display" | "/display/draft" | "/display/tournament" | "/draft" | "/scores";
   };
   "routes/home.tsx": {
     id: "routes/home";
@@ -54,7 +56,7 @@ type RouteFiles = {
   };
   "routes/join.tsx": {
     id: "routes/join";
-    page: "/join";
+    page: "/join/:urlCode?";
   };
   "routes/home.manage.tsx": {
     id: "routes/home.manage";
