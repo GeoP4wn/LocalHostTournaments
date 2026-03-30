@@ -22,7 +22,7 @@ export default function Draft() {
     const data = JSON.parse(rawData || "{}");
 
     if (data.player_id) {
-      // 2. "Upload" the ID into state
+      // 2. "Upload" the ID into state to be able to use it in the UI
       setPlayerId(data.player_id);
     } else {
       navigate('/join');
