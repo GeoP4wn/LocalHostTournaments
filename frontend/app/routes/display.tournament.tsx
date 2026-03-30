@@ -1,7 +1,7 @@
 export const handle = {
   sidebarLinks: [
+    { label: "< Back", to: "/" },
     { label: "Display Drafting", to: "/display/draft" },
-    { label: "Display a Tournament", to: "/display/tournament" },
   ],
 };
 

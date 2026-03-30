@@ -10,6 +10,10 @@ export default [
 
   //display
   route("display", "routes/display.tsx"),
+  route("display/draft", "routes/display.draft.tsx"),
+  route("display/tournament", "routes/display.tournament.tsx"), 
+
+  //other
   route("draft", "routes/draft.tsx"),
-  route("scores", "routes/scores.tsx")
+  route("scores", "routes/scores.tsx"),
 ] satisfies RouteConfig;

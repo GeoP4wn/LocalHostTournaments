@@ -226,17 +226,24 @@ def submit_draft(request: Request, player_id: int, body: DraftSubmit):
 @app.get("/tournaments/{join_code}/draft_status")
 @limiter.limit("20/minute")
 def draft_status(request: Request, join_code: str):
-    """Display node polls this to know when everyone has drafted."""
     with get_db() as db:
-        t = db.execute(
-            "SELECT * FROM tournaments WHERE join_code = ?", (join_code,)
-        ).fetchone()
-        players = db.execute(
-            "SELECT name, draft_done FROM players WHERE tournament_id = ?",
-            (t["id"],)
-        ).fetchall()
+        t = db.execute("SELECT id FROM tournaments WHERE join_code = ?", (join_code,)).fetchone()
+        
+        # Get players and their drafted game IDs
+        players_data = []
+        players = db.execute("SELECT id, name, draft_done FROM players WHERE tournament_id = ?", (t["id"],)).fetchall()
+        
+        for p in players:
+            # Fetch IDs of games this specific player picked
+            drafts = db.execute("SELECT game_id FROM drafts WHERE player_id = ?", (p["id"],)).fetchall()
+            players_data.append({
+                "name": p["name"],
+                "draft_done": p["draft_done"],
+                "game_ids": [d["game_id"] for d in drafts]
+            })
+
     all_done = all(p["draft_done"] for p in players)
-    return {"all_done": all_done, "players": [dict(p) for p in players]}
+    return {"all_done": all_done, "players": players_data}
 
 # ── Rounds & scoring ───────────────────────────────────────────
 

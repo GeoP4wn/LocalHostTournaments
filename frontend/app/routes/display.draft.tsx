@@ -1,6 +1,6 @@
 export const handle = {
   sidebarLinks: [
-    { label: "Display Drafting", to: "/display/draft" },
+    { label: "< Back", to: "/" },
     { label: "Display a Tournament", to: "/display/tournament" },
   ],
 };
@@ -8,7 +8,7 @@ export const handle = {
 export default function Display()  {
     return(
         <div>
-            <h1>Display the current Tournament</h1>
+            <h1>Display the current Draft</h1>
         </div>
     );
 }
