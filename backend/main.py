@@ -1,13 +1,19 @@
 # main.py
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from typing import Optional
 import sqlite3, random, string, json
 from datetime import datetime
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 
+limiter = Limiter(key_func=get_remote_address)
 app = FastAPI()
-app.mount("/static", StaticFiles(directory="static"), name="static")
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.mount("/static", StaticFiles(directory="../frontend/static"), name="static")
 
 DB = "tournament.db"
 
@@ -74,7 +80,7 @@ init_db()
 # ── Utility ────────────────────────────────────────────────────
 
 def make_join_code():
-    return ''.join(random.choices(string.ascii_uppercase + string.digits, k=4))
+    return ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
 
 def placement_to_points(placement: int, num_players: int) -> int:
     # 1st gets n-1 points, last gets 0
@@ -98,7 +104,8 @@ class RoundResultSubmit(BaseModel):
 # ── Tournaments ────────────────────────────────────────────────
 
 @app.post("/tournaments")
-def create_tournament(body: TournamentCreate):
+@limiter.limit("5/minute")
+def create_tournament(request: Request, body: TournamentCreate):
     code = make_join_code()
     with get_db() as db:
         cur = db.execute(
@@ -108,7 +115,8 @@ def create_tournament(body: TournamentCreate):
     return {"tournament_id": cur.lastrowid, "join_code": code}
 
 @app.get("/tournaments/{join_code}")
-def get_tournament(join_code: str):
+@limiter.limit("20/minute")
+def get_tournament(request: Request, join_code: str):
     with get_db() as db:
         t = db.execute(
             "SELECT * FROM tournaments WHERE join_code = ?", (join_code,)
@@ -121,7 +129,8 @@ def get_tournament(join_code: str):
     return {"tournament": dict(t), "players": [dict(p) for p in players]}
 
 @app.post("/tournaments/{join_code}/start")
-def start_tournament(join_code: str):
+@limiter.limit("5/minute")
+def start_tournament(request: Request, join_code: str):
     """
     Called from display node once all players have drafted.
     Merges all drafts, shuffles into round order, creates rounds.
@@ -165,7 +174,8 @@ def start_tournament(join_code: str):
 # ── Players ────────────────────────────────────────────────────
 
 @app.post("/tournaments/{join_code}/join")
-def join_tournament(join_code: str, body: PlayerJoin):
+@limiter.limit("20/minute")
+def join_tournament(request: Request, join_code: str, body: PlayerJoin):
     with get_db() as db:
         t = db.execute(
             "SELECT * FROM tournaments WHERE join_code = ?", (join_code,)
@@ -183,7 +193,8 @@ def join_tournament(join_code: str, body: PlayerJoin):
 # ── Draft ──────────────────────────────────────────────────────
 
 @app.post("/players/{player_id}/draft")
-def submit_draft(player_id: int, body: DraftSubmit):
+@limiter.limit("20/minute")
+def submit_draft(request: Request, player_id: int, body: DraftSubmit):
     with get_db() as db:
         player = db.execute(
             "SELECT * FROM players WHERE id = ?", (player_id,)
@@ -204,7 +215,8 @@ def submit_draft(player_id: int, body: DraftSubmit):
     return {"status": "draft submitted"}
 
 @app.get("/tournaments/{join_code}/draft_status")
-def draft_status(join_code: str):
+@limiter.limit("20/minute")
+def draft_status(request: Request, join_code: str):
     """Display node polls this to know when everyone has drafted."""
     with get_db() as db:
         t = db.execute(
@@ -220,7 +232,8 @@ def draft_status(join_code: str):
 # ── Rounds & scoring ───────────────────────────────────────────
 
 @app.get("/tournaments/{join_code}/current_round")
-def current_round(join_code: str):
+@limiter.limit("20/minute")
+def current_round(request: Request, join_code: str):
     with get_db() as db:
         t = db.execute(
             "SELECT * FROM tournaments WHERE join_code = ?", (join_code,)
@@ -234,7 +247,8 @@ def current_round(join_code: str):
     return dict(round_) if round_ else {"status": "no active round"}
 
 @app.post("/rounds/{round_id}/result")
-def submit_result(round_id: int, body: RoundResultSubmit):
+@limiter.limit("20/minute")
+def submit_result(request: Request, round_id: int, body: RoundResultSubmit):
     """
     placements: {player_id: placement}  e.g. {"1": 1, "2": 3, "3": 2}
     """
@@ -266,7 +280,8 @@ def submit_result(round_id: int, body: RoundResultSubmit):
     return {"status": "result saved"}
 
 @app.get("/tournaments/{join_code}/standings")
-def standings(join_code: str):
+@limiter.limit("20/minute")
+def standings(request: Request, join_code: str):
     with get_db() as db:
         t = db.execute(
             "SELECT * FROM tournaments WHERE join_code = ?", (join_code,)
@@ -285,7 +300,8 @@ def standings(join_code: str):
 # ── Games ──────────────────────────────────────────────────────
 
 @app.get("/games")
-def list_games():
+@limiter.limit("5/minute")
+def list_games(request: Request):
     with get_db() as db:
         games = db.execute("SELECT * FROM games ORDER BY console, name").fetchall()
     return {"games": [dict(g) for g in games]}

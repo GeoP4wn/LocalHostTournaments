@@ -22,7 +22,7 @@ export default function JoinTournament()  {
                   };
 
                   localStorage.setItem("tournament", JSON.stringify(data));
-                  // Optional: Force a page reload just to see if it persists
+                  // Force a reload to show the tournament button in the top right
                   window.location.reload(); 
                 } else {
                   console.log("We are on the server - localStorage is not available yet.");
