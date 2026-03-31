@@ -11,6 +11,7 @@ export default function Display() {
   const [roundData, setRoundData] = useState(null);
   const [players, setPlayers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isFinished, setIsFinished] = useState(false);
 
   useEffect(() => {
     const tournamentString = localStorage.getItem('tournament');
@@ -20,16 +21,23 @@ export default function Display() {
 
     const fetchData = async () => {
       try {
-        const [roundRes, standingsRes] = await Promise.all([
+        const [roundRes, standingsRes, tournamentRes] = await Promise.all([
           fetch(`/api/tournaments/${joinCode}/current_round`),
-          fetch(`/api/tournaments/${joinCode}/standings`)
+          fetch(`/api/tournaments/${joinCode}/standings`),
+          fetch(`/api/tournaments/${joinCode}`)
         ]);
 
         const roundJson = await roundRes.json();
         const standingsJson = await standingsRes.json();
+        const tJson = await tournamentRes.json();
 
         setRoundData(roundJson);
         setPlayers(standingsJson.standings || []);
+
+        if (tJson.tournament?.status === "finished") {
+          setIsFinished(true);
+        }
+
       } catch (error) {
         console.error("Error fetching tournament data:", error);
       } finally {
@@ -43,6 +51,10 @@ export default function Display() {
   }, []);
 
   if (loading) return <div className="p-8 text-center font-bold">Loading Tournament State...</div>;
+
+  if (isFinished) {
+    return <VictoryScreen players={players} />;
+  }
 
   return (
     <div className="min-h-screen bg-gray-100 p-8">
@@ -136,6 +148,48 @@ export default function Display() {
           </div>
         </section>
       </main>
+    </div>
+  );
+}
+
+function VictoryScreen({ players }) {
+  const winner = players[0]; // Standings are already sorted by points/wins
+
+  return (
+    <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center p-8 overflow-hidden relative">
+      {/* Background Decor */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-blue-900/20 via-gray-900 to-black"></div>
+      
+      <div className="relative z-10 text-center animate-in zoom-in duration-700">
+        <h2 className="text-blue-400 font-black tracking-[0.3em] uppercase mb-2">Tournament Complete</h2>
+        <h1 className="text-8xl font-black text-white italic uppercase tracking-tighter mb-8">
+          Grand Champion
+        </h1>
+
+        {/* The Winner Card */}
+        <div className="bg-white p-1 rounded-2xl shadow-[0_0_50px_rgba(59,130,246,0.5)] transform hover:scale-105 transition-transform">
+          <div className="bg-gray-900 rounded-xl p-12 flex flex-col items-center border border-gray-800">
+            <div className="w-32 h-32 bg-gradient-to-tr from-yellow-400 to-orange-600 rounded-full flex items-center justify-center text-5xl mb-6 shadow-lg">
+              🏆
+            </div>
+            <span className="text-6xl font-black text-white uppercase italic">{winner?.name}</span>
+            <div className="mt-4 flex gap-6 text-gray-400 font-bold uppercase tracking-widest text-sm">
+              <span>{winner?.wins} Wins</span>
+              <span>{winner?.total_points} Points</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Final Standings Mini-List */}
+        <div className="mt-12 grid grid-cols-2 gap-4 max-w-lg mx-auto">
+           {players.slice(1, 5).map((p, i) => (
+             <div key={i} className="text-left bg-gray-800/50 p-3 rounded border border-gray-700 flex justify-between">
+               <span className="text-gray-400 font-bold">#{i + 2} {p.name}</span>
+               <span className="text-blue-400 font-black">{p.total_points}</span>
+             </div>
+           ))}
+        </div>
+      </div>
     </div>
   );
 }
