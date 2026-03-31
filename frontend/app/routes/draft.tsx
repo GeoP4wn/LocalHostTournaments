@@ -113,7 +113,7 @@ export default function Draft() {
               >
                 <div className="relative w-full aspect-square">
                   <img
-                    src={`http://localhost:8000/images/games/${encodeURIComponent(game.name)}.jpg`}
+                    src={`http://localhost:8000${game.image_path}`}
                     alt={game.name}
                     className="w-full h-full object-contain"
                   />

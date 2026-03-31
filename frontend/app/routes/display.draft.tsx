@@ -119,7 +119,7 @@ export default function Display() {
             }
         }}
       >
-        Join a Tournament
+        Start the Tournament
       </button>
 
       {/* 4. Display Join URL and QR Code */}
@@ -136,7 +136,7 @@ export default function Display() {
           return (
             <div key={idx} className="bg-gray-300 aspect-square flex flex-col items-center p-2">
               <img 
-                src={`http://localhost:8000/images/games/${encodeURIComponent(game?.name)}.jpg`}
+                src={`http://localhost:8000${game?.image_path}`}
                 alt={`Image of ${game?.name}`}
                 className="w-full h-2/3 object-contain"
               />
