@@ -53,6 +53,7 @@ def init_db():
                 join_code TEXT UNIQUE NOT NULL,
                 status TEXT DEFAULT 'drafting',
                 wins_needed INTEGER DEFAULT 3,
+                max_games_per_player INTEGER DEFAULT 3,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP
             );
             CREATE TABLE IF NOT EXISTS players (
@@ -110,10 +111,14 @@ class RoundResultSubmit(BaseModel):
     # { player_id: placement } e.g. {1: 1, 2: 3, 3: 2, 4: 4}
     placements: dict[int, int]
 
+class TournamentSettings(BaseModel):
+    max_games_per_player: Optional[int] = None
+    wins_needed: Optional[int] = None
+
 # ── Tournaments ────────────────────────────────────────────────
 
 @app.post("/tournaments")
-@limiter.limit("5/minute")
+@limiter.limit("20/minute")
 def create_tournament(request: Request, body: TournamentCreate):
     code = make_join_code()
     with get_db() as db:
@@ -138,7 +143,7 @@ def get_tournament(request: Request, join_code: str):
     return {"tournament": dict(t), "players": [dict(p) for p in players]}
 
 @app.post("/tournaments/{join_code}/start")
-@limiter.limit("5/minute")
+@limiter.limit("20/minute")
 def start_tournament(request: Request, join_code: str):
     """
     Called from display node once all players have drafted.
@@ -254,13 +259,22 @@ def current_round(request: Request, join_code: str):
         t = db.execute(
             "SELECT * FROM tournaments WHERE join_code = ?", (join_code,)
         ).fetchone()
+
         round_ = db.execute("""
             SELECT r.*, g.name as game_name, g.console, g.eval_mode,
                    g.image_path, g.notes
             FROM rounds r JOIN games g ON g.id = r.game_id
             WHERE r.tournament_id = ? AND r.status = 'active'
         """, (t["id"],)).fetchone()
-    return dict(round_) if round_ else {"status": "no active round"}
+
+        count_row = db.execute(
+            "SELECT COUNT(*) as total FROM rounds WHERE tournament_id = ?", 
+            (t["id"],)
+        ).fetchone()
+
+        response_data = dict(round_) if round_ else {"status": "no active round"}
+        response_data["round_count"] = count_row["total"]
+    return response_data
 
 @app.post("/rounds/{round_id}/result")
 @limiter.limit("20/minute")
@@ -316,8 +330,35 @@ def standings(request: Request, join_code: str):
 # ── Games ──────────────────────────────────────────────────────
 
 @app.get("/games")
-@limiter.limit("5/minute")
+@limiter.limit("20/minute")
 def list_games(request: Request):
     with get_db() as db:
         games = db.execute("SELECT * FROM games ORDER BY console, name").fetchall()
     return {"games": [dict(g) for g in games]}
+
+# ── Settings ──────────────────────────────────────────────────────
+@app.patch("/tournaments/{join_code}/settings")
+@limiter.limit("20/minute")
+def update_settings(request: Request, join_code: str, body: TournamentSettings):
+    with get_db() as db:
+        t = db.execute(
+            "SELECT * FROM tournaments WHERE join_code = ?", (join_code,)
+        ).fetchone()
+        if not t:
+            raise HTTPException(404, "Tournament not found")
+        if t["status"] == "finished":
+            raise HTTPException(400, "Cannot edit a finished tournament")
+
+        # build update dynamically — only patch fields that were sent
+        updates = body.model_dump(exclude_none=True)
+        if not updates:
+            return {"status": "nothing to update"}
+
+        set_clause = ", ".join(f"{k} = ?" for k in updates)
+        values = list(updates.values()) + [join_code]
+
+        db.execute(
+            f"UPDATE tournaments SET {set_clause} WHERE join_code = ?",
+            values
+        )
+    return {"status": "updated", "changes": updates}
