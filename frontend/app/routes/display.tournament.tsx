@@ -20,7 +20,6 @@ export default function Display() {
 
     const fetchData = async () => {
       try {
-        // Note: Ensure your proxy or base URL is correct (http://localhost:8000 vs /api)
         const [roundRes, standingsRes] = await Promise.all([
           fetch(`/api/tournaments/${joinCode}/current_round`),
           fetch(`/api/tournaments/${joinCode}/standings`)

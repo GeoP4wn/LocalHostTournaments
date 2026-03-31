@@ -18,6 +18,7 @@ export default function HomeManage()  {
         return "";
       });
       const [gamesPerPlayer, setGamesPerPlayer] = useState(3);
+      const [tournamentStatus, setTournamentStatus] = useState("active");
 
       const updateMaxGames = async (newLimit: number) => {
         setGamesPerPlayer(newLimit) // optimistic update
@@ -36,6 +37,27 @@ export default function HomeManage()  {
           }
         } catch (error) {
           setGamesPerPlayer(gamesPerPlayer) // revert on network failure
+          console.error("Failed to update settings:", error)
+        }
+      }
+      
+      const updateTournamentStatus = async (newStatus: string) => {
+        setTournamentStatus(newStatus) // optimistic update
+
+        try {
+          const res = await fetch(`/api/tournaments/${joinCode}/settings`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ status: newStatus }),
+          })
+
+          if (!res.ok) {
+            // revert optimistic update if server rejected it
+            setTournamentStatus(tournamentStatus)
+            console.error("Server rejected settings update:", await res.text())
+          }
+        } catch (error) {
+          setTournamentStatus(tournamentStatus) // revert on network failure
           console.error("Failed to update settings:", error)
         }
       }
@@ -85,7 +107,25 @@ export default function HomeManage()  {
                   onChange={(e) => {updateMaxGames(Number(e.target.value))}}
                 />
               </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-sm font-medium">Tournament Status:</label>
+                <select
+                  className="border p-2 rounded"
+                  value={tournamentStatus}
+                  onChange={(e) => {updateTournamentStatus(e.target.value)}}
+                >
+                  {/*<option value="drafting">Drafting</option>TODO??*/} 
+                  <option value="active">Active</option>
+                  <option value="finished">Finished</option>
+                </select>
+              </div>
             </div>
+        </div>
+        <div>
+            <h1 className="text-xl font-bold">Manage Games</h1>
+        </div>
+        <div>
+            <h1 className="text-xl font-bold">Manage Players</h1>
         </div>
         <div>
             <h1 className="text-xl font-bold">Manage Games</h1>

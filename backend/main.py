@@ -280,24 +280,19 @@ def current_round(request: Request, join_code: str):
 @app.post("/rounds/{round_id}/result")
 @limiter.limit("20/minute")
 def submit_result(request: Request, round_id: int, body: RoundResultSubmit):
-    """
-    placements: {player_id: placement}  e.g. {"1": 1, "2": 3, "3": 2}
-    """
     with get_db() as db:
-        round_ = db.execute(
-            "SELECT * FROM rounds WHERE id = ?", (round_id,)
-        ).fetchone()
-        if not round_ or round_["status"] != "active":
-            raise HTTPException(400, "Round not active")
-        
-        tournament = db.execute(
-            "SELECT status FROM tournaments WHERE id = ?", 
-            (round_["tournament_id"],)
-        ).fetchone()
+        # 1. Fetch current round and tournament info
+        round_ = db.execute("""
+            SELECT r.*, t.wins_needed, t.status as t_status 
+            FROM rounds r 
+            JOIN tournaments t ON t.id = r.tournament_id 
+            WHERE r.id = ?
+        """, (round_id,)).fetchone()
 
-        if tournament["status"] == "finished":
-            raise HTTPException(400, "Tournament is over; results cannot be added.")
+        if not round_ or round_["t_status"] == "finished":
+            raise HTTPException(400, "Tournament already finished or round not found")
 
+        # 2. Record the results
         num_players = len(body.placements)
         for player_id, placement in body.placements.items():
             points = placement_to_points(placement, num_players)
@@ -308,15 +303,35 @@ def submit_result(request: Request, round_id: int, body: RoundResultSubmit):
 
         db.execute("UPDATE rounds SET status = 'done' WHERE id = ?", (round_id,))
 
-        # activate next round
-        db.execute("""
-            UPDATE rounds SET status = 'active'
-            WHERE tournament_id = ? AND order_index = (
-                SELECT order_index + 1 FROM rounds WHERE id = ?
-            )
-        """, (round_["tournament_id"], round_id))
+        # 3. WIN CONDITION CHECK: Does anyone have enough wins now?
+        winner_check = db.execute("""
+            SELECT COUNT(*) as wins FROM round_results 
+            WHERE player_id = ? AND placement = 1
+        """, (list(body.placements.keys())[0],))
+        
+        # Better yet, check all players in this tournament for the win threshold
+        top_winner = db.execute("""
+            SELECT COUNT(CASE WHEN placement = 1 THEN 1 END) as total_wins
+            FROM round_results rr
+            JOIN rounds r ON r.id = rr.round_id
+            WHERE r.tournament_id = ?
+            GROUP BY rr.player_id
+            ORDER BY total_wins DESC LIMIT 1
+        """, (round_["tournament_id"],)).fetchone()
 
-    return {"status": "result saved"}
+        # 4. END OF GAMES CHECK: Is there a next round?
+        next_round = db.execute("""
+            SELECT id FROM rounds 
+            WHERE tournament_id = ? AND order_index = ? + 1
+        """, (round_["tournament_id"], round_["order_index"])).fetchone()
+
+        # 5. DECIDE: Finish or Move to Next
+        if (top_winner and top_winner["total_wins"] >= round_["wins_needed"]) or not next_round:
+            db.execute("UPDATE tournaments SET status = 'finished' WHERE id = ?", (round_["tournament_id"],))
+            return {"status": "tournament_finished"}
+        else:
+            db.execute("UPDATE rounds SET status = 'active' WHERE id = ?", (next_round["id"],))
+            return {"status": "next_round_activated"}
 
 @app.get("/tournaments/{join_code}/standings")
 @limiter.limit("20/minute")
