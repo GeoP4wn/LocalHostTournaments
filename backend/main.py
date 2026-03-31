@@ -114,6 +114,7 @@ class RoundResultSubmit(BaseModel):
 class TournamentSettings(BaseModel):
     max_games_per_player: Optional[int] = None
     wins_needed: Optional[int] = None
+    status: Optional[str] = None
 
 # ── Tournaments ────────────────────────────────────────────────
 
@@ -288,6 +289,14 @@ def submit_result(request: Request, round_id: int, body: RoundResultSubmit):
         ).fetchone()
         if not round_ or round_["status"] != "active":
             raise HTTPException(400, "Round not active")
+        
+        tournament = db.execute(
+            "SELECT status FROM tournaments WHERE id = ?", 
+            (round_["tournament_id"],)
+        ).fetchone()
+
+        if tournament["status"] == "finished":
+            raise HTTPException(400, "Tournament is over; results cannot be added.")
 
         num_players = len(body.placements)
         for player_id, placement in body.placements.items():
@@ -351,6 +360,10 @@ def update_settings(request: Request, join_code: str, body: TournamentSettings):
 
         # build update dynamically — only patch fields that were sent
         updates = body.model_dump(exclude_none=True)
+
+        if "status" in updates and updates["status"] not in ["active", "finished"]:
+             raise HTTPException(400, "Invalid status transition")
+
         if not updates:
             return {"status": "nothing to update"}
 
