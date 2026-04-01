@@ -7,9 +7,37 @@ export const handle = {
   ],
 };
 
+const useLongPress = (onStart, onEnd, ms = 500) => {
+  const [isPressing, setisPressing] = useState(false);
 
+  useEffect(() => {
+    let timerId;
+    if (isPressing) {
+      timerId = setTimeout(() => {
+        onStart();
+      }, ms);
+    } else {
+      clearTimeout(timerId);
+    }
+    return () => clearTimeout(timerId);
+  }, [isPressing, onStart, ms]);
+
+  return {
+    onMouseDown: () => setisPressing(true),
+    onMouseUp: () => { setisPressing(false); onEnd(); },
+    onMouseLeave: () => { setisPressing(false); onEnd(); },
+    onTouchStart: () => setisPressing(true),
+    onTouchEnd: () => { setisPressing(false); onEnd(); },
+  };
+};
 
 function GameDetailModal({ game, onClose }) {
+  useEffect(() => {
+    const handleEsc = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, [onClose]);
+
   if (!game) return null;
 
   // Helper to render the stat bars
@@ -28,17 +56,11 @@ function GameDetailModal({ game, onClose }) {
     </div>
   );
 
-  const getScoreColor = (score) => {
-    if (!score) return "bg-gray-500";
-    if (score >= 75) return "bg-green-500";
-    if (score >= 50) return "bg-yellow-500";
-    return "bg-red-500";
-  };
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-in fade-in duration-300">
-      <button onClick={onClose} className="absolute top-8 right-8 text-white text-4xl hover:text-blue-500">×</button>
-      
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-in fade-in duration-300"
+      onClick={onClose}
+    >
       <div className="bg-gray-900 border-2 border-blue-500/30 rounded-3xl overflow-hidden max-w-4xl w-full flex flex-col md:flex-row shadow-[0_0_50px_rgba(59,130,246,0.2)]">
         
         {/* Left: Huge Image & Metascore */}
@@ -48,7 +70,7 @@ function GameDetailModal({ game, onClose }) {
             className="w-full h-full object-cover opacity-80"
           />
           <div className="absolute bottom-6 left-6">
-            <div className={`${getScoreColor(game.metascore)} text-black font-black p-4 rounded-xl shadow-lg flex flex-col items-center...`}>
+            <div className="bg-green-500 text-black font-black p-4 rounded-xl shadow-lg flex flex-col items-center">
               <span className="text-[10px] uppercase leading-none">Metascore</span>
               <span className="text-3xl leading-none">{game.metascore || "N/A"}</span>
             </div>
@@ -91,6 +113,49 @@ function GameDetailModal({ game, onClose }) {
   );
 }
 
+function GameCardWrapper({ game, onGameSelect }) {
+  const longPressProps = useLongPress(() => onGameSelect(game), () => {}, 500);
+  return (
+    <div 
+      key={game.id}
+      onClick={() => onGameSelect(game)}
+      {...longPressProps}
+      className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow group"
+    >
+      {/* Aspect ratio box for image */}
+      <div className="aspect-square bg-gray-100 relative overflow-hidden">
+        {game.image_path ? (
+          <img 
+            src={`http://localhost:8000${game.image_path}`} 
+            alt={game.name}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-gray-300 font-bold italic">
+            NO IMAGE
+          </div>
+        )}
+        <div className="absolute top-2 right-2 bg-black/70 text-white text-[10px] font-bold px-2 py-1 rounded uppercase">
+          {game.eval_mode}
+        </div>
+      </div>
+
+      <div className="p-4">
+        <h3 className="font-black uppercase text-gray-800 leading-tight mb-1 truncate">
+          {game.name}
+        </h3>
+        <div className="flex justify-between items-center">
+          <span className="text-xs font-bold text-gray-400 uppercase tracking-tighter">
+            {game.year || "Unknown Year"}
+          </span>
+          <span className="text-xs font-mono text-blue-500 bg-blue-50 px-2 py-0.5 rounded">
+            {game.min_players}-{game.max_players}P
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
 export default function GamesLibrary() {
   const [groupedGames, setGroupedGames] = useState({});
   const [loading, setLoading] = useState(true);
@@ -155,43 +220,11 @@ export default function GamesLibrary() {
             {/* Games Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {games.map((game) => (
-                <div 
+                <GameCardWrapper 
                   key={game.id}
-                  onClick={() => setSelectedGame(game)} 
-                  className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow group"
-                >
-                  {/* Aspect ratio box for image */}
-                  <div className="aspect-square bg-gray-100 relative overflow-hidden">
-                    {game.image_path ? (
-                      <img 
-                        src={`http://localhost:8000${game.image_path}`} 
-                        alt={game.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-gray-300 font-bold italic">
-                        NO IMAGE
-                      </div>
-                    )}
-                    <div className="absolute top-2 right-2 bg-black/70 text-white text-[10px] font-bold px-2 py-1 rounded uppercase">
-                      {game.eval_mode}
-                    </div>
-                  </div>
-
-                  <div className="p-4">
-                    <h3 className="font-black uppercase text-gray-800 leading-tight mb-1 truncate">
-                      {game.name}
-                    </h3>
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs font-bold text-gray-400 uppercase tracking-tighter">
-                        {game.year || "Unknown Year"}
-                      </span>
-                      <span className="text-xs font-mono text-blue-500 bg-blue-50 px-2 py-0.5 rounded">
-                        {game.min_players}-{game.max_players}P
-                      </span>
-                    </div>
-                  </div>
-                </div>
+                  game={game} 
+                  onGameSelect={setSelectedGame}
+                />
               ))}
             </div>
           </section>

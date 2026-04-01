@@ -29,7 +29,59 @@ function GameCard({ game }) {
   );
 }
 
+export const handle = {
+  sidebarLinks: [
+    { label: "< Back", to: "/" },
+    { label: "Display a Tournament", to: "/display/tournament" },
+  ],
+};
+
+function GameCardWrapper({ game, onGameSelect }) {
+  const longPressProps = useLongPress(() => onGameSelect(game), () => {}, 500);
+
+  if (!game) return null;
+
+  return (
+    <div 
+      {...longPressProps}
+      className="cursor-pointer transform hover:scale-105 transition-transform"
+    >
+      <GameCard game={game} />
+    </div>
+  );
+}
+
+const useLongPress = (onStart, onEnd, ms = 500) => {
+  const [isPressing, setisPressing] = useState(false);
+
+  useEffect(() => {
+    let timerId;
+    if (isPressing) {
+      timerId = setTimeout(() => {
+        onStart();
+      }, ms);
+    } else {
+      clearTimeout(timerId);
+    }
+    return () => clearTimeout(timerId);
+  }, [isPressing, onStart, ms]);
+
+  return {
+    onMouseDown: () => setisPressing(true),
+    onMouseUp: () => { setisPressing(false); onEnd(); },
+    onMouseLeave: () => { setisPressing(false); onEnd(); },
+    onTouchStart: () => setisPressing(true),
+    onTouchEnd: () => { setisPressing(false); onEnd(); },
+  };
+};
+
 function GameDetailModal({ game, onClose }) {
+  useEffect(() => {
+    const handleEsc = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, [onClose]);
+
   if (!game) return null;
 
   // Helper to render the stat bars
@@ -49,9 +101,10 @@ function GameDetailModal({ game, onClose }) {
   );
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-in fade-in duration-300">
-      <button onClick={onClose} className="absolute top-8 right-8 text-white text-4xl hover:text-blue-500">×</button>
-      
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-in fade-in duration-300"
+      onClick={onClose}
+    >
       <div className="bg-gray-900 border-2 border-blue-500/30 rounded-3xl overflow-hidden max-w-4xl w-full flex flex-col md:flex-row shadow-[0_0_50px_rgba(59,130,246,0.2)]">
         
         {/* Left: Huge Image & Metascore */}
@@ -170,7 +223,7 @@ export default function Display() {
           <section className="bg-white p-6 rounded-2xl shadow-lg">
             <h2 className="text-gray-900 font-black uppercase italic mb-4 border-b-2 border-gray-100 pb-2">Draft Status</h2>
             <div className="space-y-3">
-              {draftStatus.players.map((p, i) => (
+              {(draftStatus?.players || []).map((p, i) => (
                 <div key={i} className="flex items-center justify-between">
                   <span className={`font-bold ${p.draft_done ? "text-gray-900" : "text-gray-400 animate-pulse"}`}>
                     {p.name}
@@ -198,21 +251,20 @@ export default function Display() {
           <h2 className="text-2xl font-black uppercase italic text-gray-800 mb-6 flex items-center gap-3">
             Game Pool 
             <span className="text-sm font-mono text-gray-400 bg-gray-200 px-2 py-1 rounded-md not-italic">
-               {draftStatus.players.flatMap(p => p.game_ids || []).length} Titles
+               {draftStatus?.players?.flatMap(p => p.game_ids || []).length ?? 0} Titles
             </span>
           </h2>
           
           <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-3">
-            {draftStatus.players.flatMap(p => p.game_ids || []).map((gameId, idx) => {
+            {(draftStatus?.players || []).flatMap(p => p.game_ids || []).map((gameId) => {
               const game = gamesLibrary[gameId];
+              if (!game) return null;
               return (
-                <div 
-                  key={`${gameId}-${idx}`}
-                  onClick={() => setSelectedGame(game)} // Trigger the big detail view
-                  className="cursor-pointer transform hover:scale-105 transition-transform"
-                >
-                  <GameCard game={game} />
-                </div>
+                <GameCardWrapper 
+                  key={gameId}
+                  game={game} 
+                  onGameSelect={setSelectedGame}
+                />
               );
             })}
           </div>

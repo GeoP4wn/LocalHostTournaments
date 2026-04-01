@@ -230,7 +230,7 @@ def submit_draft(request: Request, player_id: int, body: DraftSubmit):
     return {"status": "draft submitted"}
 
 @app.get("/tournaments/{join_code}/draft_status")
-@limiter.limit("20/minute")
+@limiter.limit("50/minute")
 def draft_status(request: Request, join_code: str):
     with get_db() as db:
         t = db.execute("SELECT id FROM tournaments WHERE join_code = ?", (join_code,)).fetchone()

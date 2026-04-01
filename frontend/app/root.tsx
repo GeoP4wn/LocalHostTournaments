@@ -82,7 +82,7 @@ export default function App() {
           <div className="size-18 md:hidden">
             <FontAwesomeIcon icon="fa-solid fa-bars" />
           </div>
-          <img className="hidden md:block w-24 h-36 self-start" src="static/images/sonic.webp" alt="Sonic" />
+          <img className="hidden md:block w-24 h-36 self-start" src="/static/images/sonic.webp" alt="Sonic" />
           <nav className="flex items-center justify-center self-center flex-row gap-6">
             <Link className="text-xl md:text-4xl" to="/">Tournament</Link>
             <Link className="text-xl md:text-4xl" to="/display">Display</Link>
