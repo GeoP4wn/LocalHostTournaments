@@ -10,12 +10,11 @@ import {
   useNavigate,
 } from "react-router";
 
-import { 
-  useEffect, 
-  useState, 
+import {
+  useEffect,
+  useState,
+  useRef,
 } from "react";
-
-import { useTournament } from "./hooks/useTournament";
 
 import type { Route } from "./+types/root";
 import "./app.css";
@@ -57,38 +56,129 @@ export function Layout({ children }: { children: React.ReactNode }) {
   );
 }
 
+const NAV_LINKS = [
+  { label: "Tournament", to: "/" },
+  { label: "Display", to: "/display" },
+  { label: "Draft", to: "/draft" },
+  { label: "Scores", to: "/scores" },
+];
+
 export default function App() {
   const matches = useMatches();
-
-  //handle for the side bar links
   const currentHandle = matches.find((m) => m.handle?.sidebarLinks);
-  const links = currentHandle?.handle?.sidebarLinks || [];
-  const [tournament, setTournament] = useState<{code: string, playerName: string} | null>(null)
+  const sidebarLinks = currentHandle?.handle?.sidebarLinks || [];
+
+  const [tournament, setTournament] = useState<{ code: string; playerName?: string } | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const stored = localStorage.getItem("tournament")
-    setTournament(stored ? JSON.parse(stored) : null)
-  }, [])
+    const stored = localStorage.getItem("tournament");
+    setTournament(stored ? JSON.parse(stored) : null);
+  }, []);
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    if (menuOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [menuOpen]);
 
   const leave = () => {
-    localStorage.removeItem("tournament")
-    setTournament(null)
-  }
+    localStorage.removeItem("tournament");
+    setTournament(null);
+  };
 
   return (
     <div className="min-h-screen flex flex-col">
       <header className="w-full self-center px-6 py-3">
         <div className="flex flex-row justify-between items-center">
-          <div className="size-18 md:hidden">
-            <FontAwesomeIcon icon="fa-solid fa-bars" />
+
+          {/* Mobile: Hamburger */}
+          <div className="md:hidden relative" ref={menuRef}>
+            <button
+              onClick={() => setMenuOpen((v) => !v)}
+              className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+              aria-label="Open menu"
+            >
+              <FontAwesomeIcon
+                icon={menuOpen ? "fa-solid fa-xmark" : "fa-solid fa-bars"}
+                className="text-xl w-5 h-5"
+              />
+            </button>
+
+            {menuOpen && (
+              <div className="absolute left-0 top-full mt-2 w-56 bg-white border border-gray-200 rounded-xl shadow-xl z-50 overflow-hidden">
+                {/* Main nav */}
+                <div className="p-2 border-b border-gray-100">
+                  {NAV_LINKS.map((link) => (
+                    <Link
+                      key={link.to}
+                      to={link.to}
+                      onClick={() => setMenuOpen(false)}
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-700 font-semibold hover:bg-gray-50 transition-colors"
+                    >
+                      {link.label}
+                    </Link>
+                  ))}
+                </div>
+
+                {/* Sidebar contextual links */}
+                {sidebarLinks.length > 0 && (
+                  <div className="p-2 border-b border-gray-100">
+                    <p className="text-[10px] uppercase font-black text-gray-400 tracking-widest px-3 pt-1 pb-2">
+                      On this page
+                    </p>
+                    {sidebarLinks.map((link) => (
+                      <Link
+                        key={link.to}
+                        to={link.to}
+                        onClick={() => setMenuOpen(false)}
+                        className="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-600 text-sm hover:bg-gray-50 transition-colors"
+                      >
+                        {link.label}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+
+                {/* Tournament status */}
+                {tournament && (
+                  <div className="p-3">
+                    <div className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2">
+                      <span className="text-sm font-mono font-bold text-gray-700">{tournament.code}</span>
+                      <button
+                        onClick={() => { leave(); setMenuOpen(false); }}
+                        className="text-gray-400 hover:text-red-500 text-xs font-bold transition-colors"
+                      >
+                        Leave ✕
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
+
+          {/* Desktop: Sonic logo */}
           <img className="hidden md:block w-24 h-36 self-start" src="/static/images/sonic.webp" alt="Sonic" />
-          <nav className="flex items-center justify-center self-center flex-row gap-6">
-            <Link className="text-xl md:text-4xl" to="/">Tournament</Link>
-            <Link className="text-xl md:text-4xl" to="/display">Display</Link>
-            <Link className="text-xl md:text-4xl" to="/draft">Draft</Link>
-            <Link className="text-xl md:text-4xl" to="/scores">Scores</Link>
+
+          {/* Desktop nav */}
+          <nav className="hidden md:flex items-center justify-center self-center flex-row gap-6">
+            {NAV_LINKS.map((link) => (
+              <Link key={link.to} className="text-xl md:text-4xl" to={link.to}>
+                {link.label}
+              </Link>
+            ))}
           </nav>
+
+          {/* Tournament badge (desktop) */}
           <div>
             {tournament && (
               <div className="flex items-center gap-2 ml-auto">
@@ -105,18 +195,13 @@ export default function App() {
       </header>
 
       <main className="flex-1 flex flex-row p-6">
-        <aside className="md:hidden">
-          {/*Mobile Sidebar TODO*/}
-        </aside>
+        {/* Desktop sidebar */}
         <aside className="hidden md:block w-100 border-r p-6 bg-slate-50 min-h-full">
           <h2 className="text-2xl font-bold mb-4">LocalHost</h2>
           <ul className="space-y-2">
-            {links.map((link) => (
+            {sidebarLinks.map((link) => (
               <li key={link.to}>
-                <Link 
-                  className="text-lg hover:underline" 
-                  to={link.to}
-                >
+                <Link className="text-lg hover:underline" to={link.to}>
                   {link.label}
                 </Link>
               </li>
@@ -124,11 +209,11 @@ export default function App() {
           </ul>
         </aside>
         <section className="flex-1 p-6">
-          <Outlet />  {/* page content */}
+          <Outlet />
         </section>
       </main>
     </div>
-  )
+  );
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
