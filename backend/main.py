@@ -3,7 +3,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from typing import Optional
-import sqlite3, random, string, json
+import sqlite3, random, string, json, contextlib
 from datetime import datetime
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
@@ -27,11 +27,26 @@ app.add_middleware(
 DB = "tournament.db"
 
 # ── DB helper ──────────────────────────────────────────────────
+# Context manager: opens a connection, yields it, always closes it.
+# This prevents file handle exhaustion under sustained polling load.
+# WAL mode allows concurrent reads; busy_timeout retries instead of
+# immediately throwing OperationalError when a write lock is held.
 
+@contextlib.contextmanager
 def get_db():
-    conn = sqlite3.connect(DB)
+    conn = sqlite3.connect(DB, timeout=30)
     conn.row_factory = sqlite3.Row
-    return conn
+    conn.execute("PRAGMA journal_mode=WAL")
+    conn.execute("PRAGMA busy_timeout=10000")
+    conn.execute("PRAGMA synchronous=NORMAL")
+    try:
+        yield conn
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
 
 def init_db():
     with get_db() as db:
@@ -197,7 +212,7 @@ def create_tournament(request: Request, body: TournamentCreate):
     return {"tournament_id": cur.lastrowid, "join_code": code}
 
 @app.get("/tournaments/{join_code}")
-@limiter.limit("60/minute")
+@limiter.limit("120/minute")
 def get_tournament(request: Request, join_code: str):
     with get_db() as db:
         t = db.execute(
@@ -348,7 +363,7 @@ def draft_status(request: Request, join_code: str):
 # ── Bench ──────────────────────────────────────────────────────
 
 @app.get("/tournaments/{join_code}/bench")
-@limiter.limit("60/minute")
+@limiter.limit("120/minute")
 def get_bench(request: Request, join_code: str):
     """
     Returns the bench order for the current active round.
@@ -435,7 +450,7 @@ def set_bench(request: Request, join_code: str, body: BenchOverride):
 # ── Round management ───────────────────────────────────────────
 
 @app.get("/tournaments/{join_code}/current_round")
-@limiter.limit("60/minute")
+@limiter.limit("120/minute")
 def current_round(request: Request, join_code: str):
     with get_db() as db:
         t = db.execute(
@@ -615,7 +630,7 @@ def submit_result(request: Request, round_id: int, body: RoundResultSubmit):
             return {"status": "next_round_activated"}
 
 @app.get("/tournaments/{join_code}/standings")
-@limiter.limit("60/minute")
+@limiter.limit("120/minute")
 def standings(request: Request, join_code: str):
     with get_db() as db:
         t = db.execute(
