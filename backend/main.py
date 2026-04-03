@@ -376,9 +376,12 @@ def get_bench(request: Request, join_code: str):
         if round_["active_player_ids"]:
             active_ids = set(json.loads(round_["active_player_ids"]))
         else:
-            # Auto-assign: top N from bench where N = max_players
-            max_p = round_["max_players"]
-            active_ids = set(p["id"] for p in bench[:max_p])
+            # Auto-assign: for heats mode use ALL players; otherwise top N by max_players
+            if round_["two_player_mode"] == "heats":
+                active_ids = set(p["id"] for p in bench)
+            else:
+                max_p = round_["max_players"]
+                active_ids = set(p["id"] for p in bench[:max_p])
 
         for p in bench:
             p["is_active"] = p["id"] in active_ids

@@ -65,13 +65,16 @@ export default function Display() {
   }, []);
 
   const confirmMode = async () => {
-    if (!twoPlayerMode || !benchData?.active_players) return;
+    if (!twoPlayerMode) return;
     setSaving(true);
+    // For heats: mark ALL players as active (everyone plays)
+    // For KotH: only the first 2 from bench play at a time, but we still record all as "in this round"
+    const allPlayerIds = (benchData?.bench || []).map((p: any) => p.id);
     await fetch(`/api/tournaments/${joinCode}/bench`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        active_player_ids: benchData.active_players.map((p) => p.id),
+        active_player_ids: allPlayerIds,
         two_player_mode: twoPlayerMode,
         koth_wins_needed: kothWins,
       }),
