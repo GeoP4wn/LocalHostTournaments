@@ -92,6 +92,7 @@ def init_db():
             "ALTER TABLE players ADD COLUMN kicked BOOLEAN DEFAULT 0",
             "ALTER TABLE rounds ADD COLUMN two_player_mode TEXT DEFAULT 'koth'",
             "ALTER TABLE rounds ADD COLUMN active_player_ids TEXT",
+            "ALTER TABLE rounds ADD COLUMN koth_wins_needed INTEGER DEFAULT 3",
         ]
         for sql in migrations:
             try:
@@ -175,7 +176,8 @@ class TournamentSettings(BaseModel):
 
 class BenchOverride(BaseModel):
     active_player_ids: list[int]
-    two_player_mode: Optional[str] = None  # 'koth' or 'heats'
+    two_player_mode: Optional[str] = None        # 'koth' or 'heats'
+    koth_wins_needed: Optional[int] = None
 
 class ReorderRounds(BaseModel):
     # List of round IDs in desired new order (only pending rounds)
@@ -391,6 +393,7 @@ def get_bench(request: Request, join_code: str):
                 "min_players": round_["min_players"],
                 "max_players": round_["max_players"],
                 "two_player_mode": round_["two_player_mode"] or "koth",
+                "koth_wins_needed": round_["koth_wins_needed"] or 3,
             }
         }
 
@@ -415,6 +418,8 @@ def set_bench(request: Request, join_code: str, body: BenchOverride):
         updates = {"active_player_ids": json.dumps(body.active_player_ids)}
         if body.two_player_mode:
             updates["two_player_mode"] = body.two_player_mode
+        if body.koth_wins_needed is not None:
+            updates["koth_wins_needed"] = body.koth_wins_needed
 
         set_clause = ", ".join(f"{k} = ?" for k in updates)
         db.execute(
