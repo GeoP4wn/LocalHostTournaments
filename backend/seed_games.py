@@ -786,10 +786,10 @@ GAMES = [
         'year': 2018,
         'eval_mode': 'placement',
         'min_players': 1,
-        'max_players': 1,
+        'max_players': 6,
         'team_game': False,
         'image_path': '/static/images/celeste.png',
-        'notes': 'Precision platformer often used for speedrun races.',
+        'notes': 'Precision platformer often used for speedrun races. Has to be played individually',
         'chaos': 1,          # Purely deterministic movement
         'skill_ceiling': 5,  # Extremely high precision required
         'duration': 2,       # Individual chapters vary in length
