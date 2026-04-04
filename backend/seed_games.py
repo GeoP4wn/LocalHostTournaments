@@ -240,6 +240,32 @@ GAMES = [
         "salt_level": 2,     # Fun-focused; low salt
         "metascore": 74,     #
     },
+    {
+        "name": "Wii Party",
+        "console": "wii",
+        "year": 2010,
+        "eval_mode": "placement",
+        "min_players": 1,
+        "max_players": 4,
+        "team_game": 0,
+        "image_path": "/static/images/wii-party.jpg",
+        "notes": "Use 'Minigame Selection' or 'Board Game Island'. High variety of 4-player games.",
+        "chaos": 4, "skill_ceiling": 3, "duration": 2, "pace": 3, "salt_level": 4,
+        "metascore": 70,
+    },
+    {
+        "name": "Wii Play",
+        "console": "wii",
+        "year": 2006,
+        "eval_mode": "score",
+        "min_players": 1,
+        "max_players": 2,
+        "team_game": 0,
+        "image_path": "/static/images/wii-play.jpg",
+        "notes": "Iconic 1v1 duels. Tanks and Shooting Range are the competitive highlights.",
+        "chaos": 2, "skill_ceiling": 4, "duration": 1, "pace": 3, "salt_level": 2,
+        "metascore": 58,
+    },
 
     # ── Wii Sports Splits ──────────────────────────────────────
     {
